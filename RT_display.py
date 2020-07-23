@@ -41,6 +41,9 @@ def RT_display(step, map, dest, state_history, action_history):
             coord = coordinate_transform(w, h, state.x, map_w, map_h)
             canvas.create_polygon(coord[0], coord[1], coord[0] + pixel_w, coord[1], coord[0] + pixel_w, coord[1] + pixel_h, coord[0], coord[1] + pixel_h, fill='red', outline='black')
 
+    def quit():
+        window.destroy()
+
     prev_state = None
     i = 0
     canvas.pack(fill=BOTH, expand=1)
@@ -52,4 +55,6 @@ def RT_display(step, map, dest, state_history, action_history):
         window.after(500 * (i + 1), recolor, prev_state, state)
         prev_state = state
         i += 1
+
+    window.after(500 * (i + 2), quit)
     window.mainloop()

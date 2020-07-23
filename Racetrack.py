@@ -1,10 +1,9 @@
-from Environment import *
 from QLearner import *
 from utils import *
 import numpy as np
 import json
 
-class RT_Action(Action):
+class RT_Action:
     def __init__(self, dx, dy):
         self.dx = dx
         self.dy = dy
@@ -12,7 +11,7 @@ class RT_Action(Action):
     def __str__(self):
         return '(%d,%d)'%(self.dx, self.dy)
 
-class RT_State(State):
+class RT_State:
     def __init__(self, is_terminal, x, v):
         self.is_terminal = is_terminal
         self.x = x
@@ -20,7 +19,7 @@ class RT_State(State):
     def __str__(self):
         return '(%s,%s)'%(str(self.x), str(self.v))
 
-class RT_Environment(Environment):
+class RT_Environment:
     def __init__(self, gamma, map, map_size, dest):
         self.gamma = gamma
         self.map = map
@@ -48,6 +47,7 @@ class RT_Environment(Environment):
     def initialize_environment(self):
         state = np.random.choice(self.states)
         self.state = self.state_dict[(state.x, (0, 0))]
+        self.step = 0
 
     def possible_actions(self, state):
         return self.actions
@@ -61,6 +61,10 @@ class RT_Environment(Environment):
         vy += action.dy
         new_x = x + vx
         new_y = y + vy
+        self.step += 1
+
+        if self.step >= 30:
+            return RT_State(True, (new_x, new_y), (vx, vy)), -10
 
         for i in range(0, 10):
             px = int(x + vx * i / 10)
@@ -70,7 +74,6 @@ class RT_Environment(Environment):
 
         if(dist_point_line_passing_two_points((x, y), (new_x, new_y), self.dest) < 0.5):
             return RT_State(True, self.dest, (vx, vy)), 10
-
 
         if not(((new_x, new_y), (vx, vy)) in self.state_dict):
             return RT_State(True, (new_x, new_y), (vx, vy)), -10

@@ -14,7 +14,6 @@ class QLearner:
     def epsilon_greedy_policy(self, state, epsilon=0.05):
         actions = list(self.Q[state].keys())
         probs = []
-
         optimal_action, _ = max_kv_in_dict(self.Q[state])
 
         for action in actions:
@@ -25,7 +24,7 @@ class QLearner:
 
         return np.random.choice(actions, p=probs)
 
-    def learn(self, env, alpha = 0.5):
+    def initialize_Q(self, env):
         self.Q = dict()
         for state in env.states:
             self.Q[state] = dict()
@@ -35,20 +34,28 @@ class QLearner:
                 else:
                     self.Q[state][action] = -np.random.rand()
 
-        step = 0
+    def learn(self, env, alpha = 0.5):
+        self.initialize_Q(env)
+
+        TEST_PERIOD = 1000
+        episode = 0
         sum_sum_reward = 0
+        num_success = 0
         while(True):
             env.initialize_environment()
-            step += 1
+            episode += 1
+            is_testing = (episode % TEST_PERIOD == 0)
             sum_reward = 0
             state_history = [env.state]
             action_history = []
 
             while(True):
                 state = env.state
-                action = self.epsilon_greedy_policy(state)
+                if is_testing:
+                    action = self.epsilon_greedy_policy(state, epsilon=0)
+                else:
+                    action = self.epsilon_greedy_policy(state)
                 next_state, reward= env.respond(action)
-
                 sum_reward += reward
 
                 if(next_state.is_terminal):
@@ -58,14 +65,18 @@ class QLearner:
                 q = self.Q[state][action]
 
                 self.Q[state][action] = q + alpha * (reward + env.gamma * max_q - q)
-                action_history.append(action)
-                state_history.append(next_state)
+                if is_testing:
+                    action_history.append(action)
+                    state_history.append(next_state)
                 if(next_state.is_terminal):
+                    if reward > 0:
+                        num_success += 1
                     break
 
             sum_sum_reward += sum_reward
-            if step % 2000 == 0:
-                print('step : ', step, ', avg_rew :', sum_sum_reward / 1000)
+            if is_testing:
+                print('Episode : ', episode, 'Success Rate :', num_success / TEST_PERIOD, ', Avg_Reward :', sum_sum_reward / TEST_PERIOD)
                 sum_sum_reward = 0
+                num_success = 0
 
-                RT_display(step, env.map, env.dest, state_history, action_history)
+                RT_display(episode, env.map, env.dest, state_history, action_history)
